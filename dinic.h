@@ -1,5 +1,5 @@
+const int inf = (int)1e9 + 7;
 struct Dinic {
-	const int inf = (int)1e9 + 7;
 	int s, t, sz;
 	vector < vector <int> > gr;
 	vector <int> pt, d;
@@ -31,7 +31,7 @@ struct Dinic {
 		ed.push_back(edge(b, a, c, c));
 	}
 	
-	bool bfs(int lim) {
+	bool bfs() {
 		for (int i = 0; i < sz; i++) {
 			d[i] = inf;
 		}
@@ -44,7 +44,7 @@ struct Dinic {
 			q.pop();
 			for (int id : gr[v]) {
 				int to = ed[id].to;
-				if (ed[id].c - ed[id].f >= lim && d[to] == inf) {
+				if (ed[id].c - ed[id].f > 0 && d[to] == inf) {
 					d[to] = d[v] + 1;
 					q.push(to);
 				}
@@ -53,34 +53,32 @@ struct Dinic {
 		return d[t] != inf;
 	}
 	
-	bool dfs(int v, int lim) {
-		if (v == t) return true;
+	int dfs(int v, int flow = inf) {
+		if (v == t || flow == 0) return flow;
 		for (int &i = pt[v]; i < gr[v].size(); i++) {
 			int id = gr[v][i];
 			int to = ed[id].to;
-			if (d[v] + 1 == d[to] && ed[id].c - ed[id].f >= lim) {
-				if (dfs(to, lim)) {
-					ed[id].f += lim;
-					ed[id ^ 1].f -= lim;
-					return true;
+			if (d[v] + 1 == d[to]) {
+				int pushed = dfs(to, min(flow, ed[id].c - ed[id].f));
+				if (pushed) {
+					ed[id].f += pushed;
+					ed[id ^ 1].f -= pushed;
+					return pushed;
 				}
 			}
 		}
-		return false;
+		return 0;
 	}
 	
-	int getflow() {
-		int flow = 0;
-		for (int lim = (1 << 30); lim > 0; ) {
-			if (!bfs(lim)) {
-				lim >>= 1;
-				continue;
-			}
+	long long getflow() {
+		long long flow = 0;
+		while (bfs()) {
 			for (int i = 0; i < sz; i++) {
 				pt[i] = 0;
 			}
-			while (dfs(s, lim)) {
-				flow += lim;
+			int pushed;
+			while (pushed = dfs(s)) {
+				flow += pushed;
 				//cout << "ASD\n";
 			}
 		}	
